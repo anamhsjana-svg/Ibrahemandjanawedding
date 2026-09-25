@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wedding Invitation | Ibrahem & Jana</title>
+
+  <!-- Firebase Live Comments -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Great+Vibes&family=Montserrat:wght@400;600;700&display=swap');
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', sans-serif;
+      background: radial-gradient(circle, #fcf0ea 0%, #f3d8ce 100%) !important;
+      color: #4a3e3d;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    .falling-petal {
+      position: fixed;
+      top: -10%;
+      width: 24px;
+      height: 32px;
+      background: linear-gradient(135deg, #d90429 0%, #9e001c 100%);
+      border-radius: 50% 10% 50% 50%;
+      box-shadow: 0 4px 10px rgba(158, 0, 28, 0.3);
+      z-index: 1000;
+      pointer-events: none;
+      animation: fallPetals linear infinite;
+    }
+
+    @keyframes fallPetals {
+      0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.95; }
+      50% { transform: translateY(50vh) rotate(180deg) scale(1.2); opacity: 0.85; }
+      100% { transform: translateY(110vh) rotate(360deg) scale(0.9); opacity: 0; }
+    }
+
+    .burst-petal {
+      position: fixed;
+      width: 28px;
+      height: 36px;
+      background: linear-gradient(135deg, #ef233c 0%, #a7001e 100%);
+      border-radius: 50% 10% 50% 50%;
+      box-shadow: 0 4px 12px rgba(167, 0, 30, 0.4);
+      z-index: 2000;
+      pointer-events: none;
+      animation: explodePetals 1.2s ease-out forwards;
+    }
+
+    @keyframes explodePetals {
+      0% { transform: translate(0, 0) scale(0.8); opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(1.8) rotate(220deg); opacity: 0; }
+    }
+
+    #envelope-screen, #main-content {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 25px 0;
+    }
+
+    .envelope-wrapper {
+      position: relative;
+      width: 330px;
+      height: 230px;
+      background-color: #a81c2f;
+      border-radius: 16px;
+      box-shadow: 0 18px 45px rgba(168, 28, 47, 0.35);
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      perspective: 1000px;
+      border: 2px solid #d4af37;
+    }
+
+    .envelope-flap {
+      position: absolute;
+      top: 0;
+      width: 0;
+      height: 0;
+      border-left: 165px solid transparent;
+      border-right: 165px solid transparent;
+      border-top: 130px solid #bd2237;
+      transform-origin: top;
+      transition: transform 0.8s ease-in-out, z-index 0.2s;
+      z-index: 5;
+    }
+
+    .envelope-pocket {
+      position: absolute;
+      bottom: 0;
+      width: 0;
+      height: 0;
+      border-left: 165px solid #941728;
+      border-right: 165px solid #941728;
+      border-bottom: 125px solid #7d1120;
+      border-radius: 0 0 16px 16px;
+      z-index: 4;
+    }
+
+    .royal-seal {
+      position: absolute;
+      top: 80px;
+      z-index: 6;
+      background: radial-gradient(circle, #e5be48 0%, #b8860b 100%);
+      color: #ffffff;
+      border: 2.5px solid #ffffff;
+      border-radius: 50%;
+      width: 82px;
+      height: 82px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 8px 22px rgba(184, 134, 11, 0.45);
+      font-family: 'Great Vibes', cursive;
+      font-size: 34px;
+    }
+
+    .royal-seal span {
+      font-family: 'Cinzel', serif;
+      font-size: 8px;
+      letter-spacing: 2px;
+      margin-top: -5px;
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    .preview-card {
+      position: absolute;
+      bottom: 15px;
+      width: 290px;
+      height: 180px;
+      background: #fffaf7;
+      border-radius: 12px;
+      border: 1.5px solid #d4af37;
+      text-align: center;
+      padding-top: 22px;
+      box-sizing: border-box;
+      transition: transform 1s ease-in-out;
+      z-index: 2;
+    }
+
+    .envelope-wrapper.open .envelope-flap {
+      transform: rotateX(180deg);
+      z-index: 1;
+    }
+
+    .envelope-wrapper.open .royal-seal {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .envelope-wrapper.open .preview-card {
+      transform: translateY(-170px) scale(1.05);
+      z-index: 3;
+    }
+
+    .card {
+      background: rgba(255, 250, 246, 0.98) !important;
+      backdrop-filter: blur(10px);
+      width: 92%;
+      max-width: 430px;
+      padding: 45px 25px;
+      border-radius: 28px;
+      box-sizing: border-box;
+      position: relative;
+      text-align: center;
+      border: 3px solid #d4af37 !important;
+      outline: 2px dashed #b8860b;
+      outline-offset: -10px;
+      box-shadow: 0 20px 50px rgba(184, 134, 11, 0.25), 0 0 25px rgba(212, 175, 55, 0.3);
+    }
+
+    .names-title {
+      font-family: 'Great Vibes', cursive;
+      font-size: 58px;
+      background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 10px 0 5px;
+    }
+
+    .subtitle {
+      font-family: 'Cinzel', serif;
+      letter-spacing: 2.5px;
+      font-size: 11px;
+      color: #a37213;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 25px;
+    }
+
+    .open-btn, .confirm-btn {
+      background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%) !important;
+      color: #ffffff !important;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 30px;
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      cursor: pointer;
+      margin-top: 15px;
+      width: 100%;
+      box-shadow: 0 8px 22px rgba(184, 134, 11, 0.35);
+      text-transform: uppercase;
+    }
+
+    #music-control {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
+      color: white;
+      border: 2px solid #fff;
+      border-radius: 50px;
+      padding: 12px 20px;
+      font-size: 13px;
+      font-family: 'Cinzel', serif;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(184, 134, 11, 0.4);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title {
+      font-family: 'Cinzel', serif;
+      color: #b8860b;
+      font-size: 16px;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .countdown-container {
+      display: flex !important;
+      justify-content: space-around !important;
+      margin-top: 15px;
+      background: #fdf7f3;
+      padding: 16px 10px;
+      border-radius: 16px;
+      border: 1.5px solid #f2d0c2;
+    }
+
+    .countdown-box span {
+      font-size: 22px;
+      font-weight: bold;
+      color: #b8860b;
+    }
+
+    .calendar-card {
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1.5px solid #f2d0c2;
+      padding: 20px 15px;
+      margin-top: 20px;
+    }
+
+    .calendar-title {
+      font-family: 'Cinzel', serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #4a3e3d;
+      margin-bottom: 15px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .calendar-day-header { font-weight: bold; color: #888; padding-bottom: 5px; }
+    .calendar-day { padding: 6px 0; display: flex; justify-content: center; align-items: center; }
+    .calendar-day.selected { background-color: #a33b49; color: #ffffff; border-radius: 50%; font-weight: bold; }
+
+    .map-container {
+      margin-top: 14px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1.5px solid #d4af37;
+    }
+
+    .map-container iframe { width: 100%; height: 200px; border: 0; }
+
+    input, select, textarea {
+      width: 100%; padding: 12px; margin: 8px 0; border: 1.5px solid #f2d0c2;
+      background: #ffffff; color: #4a3e3d; border-radius: 10px; box-sizing: border-box; font-size: 13px;
+    }
+
+    .details, .countdown, .venue, .rsvp-section, .wishes-section {
+      border-top: 1px dashed #d4af37; padding-top: 22px; margin-top: 22px;
+    }
+
+    .wish-item {
+      background: #fdf7f3; padding: 12px 15px; border-radius: 10px; margin-bottom: 10px; border-left: 3.5px solid #b8860b; text-align: left;
+    }
+  </style>
+</head>
+<body>
+
+<div id="petals-shower-container"></div>
+
+<!-- يوتيوب مشغل مخفي تماماً للأغنية الأصلية Perfect عند الثانية 75 -->
+<div id="youtube-player-container" style="display:none;">
+  <div id="youtube-audio"></div>
+</div>
+
+<!-- Floating Music Toggle Button -->
+<button id="music-control" onclick="toggleMusic()">🎵 تشغيل الموسيقى</button>
+
+<!-- Envelope Screen -->
+<div id="envelope-screen">
+  <div class="envelope-wrapper" id="envelope">
+    <div class="envelope-flap"></div>
+    <div class="royal-seal" id="seal">J & I<span>OPEN</span></div>
+    <div class="preview-card">
+      <div style="font-family: 'Great Vibes', cursive; font-size: 32px; color: #b8860b; margin-top: 15px;">Ibrahem & Jana</div>
+      <div style="font-size: 11px; color: #a37213; margin-top: 5px; font-family: 'Cinzel', serif;">OCTOBER 23, 2026</div>
+    </div>
+    <div class="envelope-pocket"></div>
+  </div>
+</div>
+
+<!-- Main Invitation Content -->
+<div id="main-content" style="display: none;">
+  <div class="card">
+    <div class="names-title">Ibrahem & Jana</div>
+    <p class="subtitle">We Joyfully Announce Our Wedding</p>
+    
+    <div class="details">
+      <div class="section-title">Time & Date</div>
+      <p style="font-size: 20px; font-weight: bold; color: #b8860b; margin: 5px 0;">8:00 PM</p>
+      <p style="font-weight: 500; margin: 0; color: #4a3e3d;">Friday, October 23, 2026</p>
+    </div>
+
+    <div class="countdown">
+      <div class="section-title">Countdown to Our Big Day</div>
+      <div class="countdown-container">
+        <div class="countdown-box"><span id="days">00</span><br><small>Days</small></div>
+        <div class="countdown-box"><span id="hours">00</span><br><small>Hours</small></div>
+        <div class="countdown-box"><span id="mins">00</span><br><small>Mins</small></div>
+        <div class="countdown-box"><span id="secs">00</span><br><small>Secs</small></div>
+      </div>
+
+      <div class="calendar-card">
+        <div class="calendar-title">OCTOBER 2026</div>
+        <div class="calendar-grid">
+          <div class="calendar-day-header">Mo</div><div class="calendar-day-header">Tu</div><div class="calendar-day-header">We</div><div class="calendar-day-header">Th</div><div class="calendar-day-header">Fr</div><div class="calendar-day-header">Sa</div><div class="calendar-day-header">Su</div>
+          <div class="calendar-day"></div><div class="calendar-day"></div><div class="calendar-day"></div><div class="calendar-day">1</div><div class="calendar-day">2</div><div class="calendar-day">3</div><div class="calendar-day">4</div>
+          <div class="calendar-day">5</div><div class="calendar-day">6</div><div class="calendar-day">7</div><div class="calendar-day">8</div><div class="calendar-day">9</div><div class="calendar-day">10</div><div class="calendar-day">11</div>
+          <div class="calendar-day">12</div><div class="calendar-day">13</div><div class="calendar-day">14</div><div class="calendar-day">15</div><div class="calendar-day">16</div><div class="calendar-day">17</div><div class="calendar-day">18</div>
+          <div class="calendar-day">19</div><div class="calendar-day">20</div><div class="calendar-day">21</div><div class="calendar-day">22</div><div class="calendar-day selected">23</div><div class="calendar-day">24</div><div class="calendar-day">25</div>
+          <div class="calendar-day">26</div><div class="calendar-day">27</div><div class="calendar-day">28</div><div class="calendar-day">29</div><div class="calendar-day">30</div><div class="calendar-day">31</div><div class="calendar-day"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="venue">
+      <div class="section-title">Venue Location</div>
+      <p style="font-weight: bold; font-size: 17px; margin-bottom: 2px; color: #b8860b;">LE CIEL HOTEL</p>
+      <p style="margin-top: 0; color: #666; font-size: 13px;">Salah Salem Street</p>
+      <div class="map-container">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3452.871032890638!2d31.309322!3d30.069152!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzDCsDA0JzA4LjkiTiAzMcKwMTgnMzmuNSJF!5e0!3m2!1sen!2seg!4v1600000000000!5m2!1sen!2seg" allowfullscreen="" loading="lazy"></iframe>
+      </div>
+    </div>
+
+    <div class="rsvp-section">
+      <div class="section-title">RSVP</div>
+      <button class="confirm-btn" onclick="showForm()">Confirm Attendance</button>
+      <form id="rsvp-form" style="display:none;" onsubmit="handleRSVP(event)">
+        <input type="text" id="rsvpName" placeholder="Full Name" required>
+        <select id="rsvpStatus" required>
+          <option value="">Will you join us?</option>
+          <option value="Joyfully Accept">Joyfully Accept</option>
+          <option value="Regretfully Decline">Regretfully Decline</option>
+        </select>
+        <input type="number" id="rsvpGuests" placeholder="Number of Guests" min="1" value="1">
+        <button type="submit" class="open-btn" style="margin-top: 10px;">Send RSVP</button>
+      </form>
+      <p id="success-msg" style="display:none; color: #b8860b; font-weight: bold; margin-top: 12px; font-size: 14px;">Thank you! We look forward to celebrating with you.</p>
+    </div>
+
+    <div class="wishes-section">
+      <div class="section-title">Leave a Wish</div>
+      <form id="wishes-form" onsubmit="handleWishes(event)">
+        <input type="text" id="wishesName" placeholder="Your Name" required>
+        <textarea id="wishesText" placeholder="Write your warm wishes for the couple..." rows="3" required></textarea>
+        <button type="submit" class="open-btn" style="margin-top: 10px;">Send Wish</button>
+      </form>
+      <p id="wishes-success-msg" style="display:none; color: #b8860b; font-weight: bold; margin-top: 12px; font-size: 14px;">Thank you for your heartwarming wish!</p>
+      
+      <div id="wishes-list" style="text-align: left; margin-top: 20px; font-size: 13px;">
+        <div class="section-title" style="text-align: center; font-size: 14px;">Warm Messages</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- يوتيوب API لضبط التشغيل عند الثانية 75 بدقة متناهية -->
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+  let player;
+  let isMusicPlaying = false;
+
+  function onYouTubeIframeAPIReady() {
+    player = new YT.Player('youtube-audio', {
+      height: '0',
+      width: '0',
+      videoId: '2Vv-BfVoq4g', // فيديو Ed Sheeran - Perfect الأصلي
+      playerVars: {
+        'autoplay': 0,
+        'controls': 0,
+        'start': 75 // البدء بدقة عند الثواني 75
+      },
+      events: {
+        'onReady': onPlayerReady
+      }
+    });
+  }
+
+  function onPlayerReady(event) {
+    // اللاعب جاهز الآن للتشغيل الفوري عند فتح الظرف
+  }
+
+  const firebaseConfig = { databaseURL: "https://wedding-ibrahem-jana-default-rtdb.firebaseio.com" };
+  if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+  const database = firebase.database();
+
+  function createPetalsShower() {
+    const container = document.getElementById('petals-shower-container');
+    for (let i = 0; i < 30; i++) {
+      const petal = document.createElement('div');
+      petal.className = 'falling-petal';
+      petal.style.left = Math.random() * 100 + 'vw';
+      petal.style.animationDuration = (Math.random() * 3 + 4) + 's';
+      petal.style.animationDelay = Math.random() * 5 + 's';
+      container.appendChild(petal);
+    }
+  }
+  createPetalsShower();
+
+  function triggerPetalBurst(x, y) {
+    for (let i = 0; i < 25; i++) {
+      const p = document.createElement('div');
+      p.className = 'burst-petal';
+      p.style.left = x + 'px';
+      p.style.top = y + 'px';
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 170 + 50;
+      p.style.setProperty('--dx', Math.cos(angle) * speed + 'px');
+      p.style.setProperty('--dy', Math.sin(angle) * speed + 'px');
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 1200);
+    }
+  }
+
+  const envelope = document.getElementById('envelope');
+
+  envelope.addEventListener('click', function(e) {
+    if (!envelope.classList.contains('open')) {
+      envelope.classList.add('open');
+      triggerPetalBurst(e.clientX || 150, e.clientY || 150);
+      
+      // تشغيل الموسيقى فوراً من الثانية 75
+      if (player && typeof player.playVideo === 'function') {
+        player.seekTo(75, true);
+        player.playVideo();
+        isMusicPlaying = true;
+        document.getElementById('music-control').innerHTML = '⏸️ إيقاف الموسيقى';
+      }
+
+      setTimeout(() => {
+        document.getElementById('envelope-screen').style.display = 'none';
+        document.getElementById('main-content').style.display = 'flex';
+        startCountdown("Oct 23, 2026 20:00:00");
+        loadLiveWishes();
+      }, 1200);
+    }
+  });
+
+  function toggleMusic() {
+    const btn = document.getElementById('music-control');
+    if (isMusicPlaying) {
+      player.pauseVideo();
+      isMusicPlaying = false;
+      btn.innerHTML = '🎵 تشغيل الموسيقى';
+    } else {
+      player.seekTo(75, true);
+      player.playVideo();
+      isMusicPlaying = true;
+      btn.innerHTML = '⏸️ إيقاف الموسيقى';
+    }
+  }
+
+  function showForm() { document.getElementById('rsvp-form').style.display = 'block'; }
+
+  function handleRSVP(e) {
+    e.preventDefault();
+    database.ref('rsvps').push({
+      name: document.getElementById('rsvpName').value,
+      status: document.getElementById('rsvpStatus').value,
+      guests: document.getElementById('rsvpGuests').value,
+      timestamp: Date.now()
+    });
+    document.getElementById('rsvp-form').style.display = 'none';
+    document.getElementById('success-msg').style.display = 'block';
+  }
+
+  function handleWishes(e) {
+    e.preventDefault();
+    database.ref('wishes').push({
+      name: document.getElementById('wishesName').value,
+      message: document.getElementById('wishesText').value,
+      timestamp: Date.now()
+    });
+    document.getElementById('wishesName').value = "";
+    document.getElementById('wishesText').value = "";
+    document.getElementById('wishes-success-msg').style.display = 'block';
+  }
+
+  function loadLiveWishes() {
+    const wishesList = document.getElementById('wishes-list');
+    database.ref('wishes').on('value', (snapshot) => {
+      wishesList.innerHTML = '<div class="section-title" style="text-align: center; font-size: 14px;">Warm Messages</div>';
+      const data = snapshot.val();
+      if(data) {
+        Object.values(data).reverse().forEach(wish => {
+          const wishItem = document.createElement('div');
+          wishItem.className = 'wish-item';
+          wishItem.innerHTML = `<strong style="color: #b8860b;">${wish.name}</strong>: <span>${wish.message}</span>`;
+          wishesList.appendChild(wishItem);
+        });
+      }
+    });
+  }
+
+  function startCountdown(weddingDate) {
+    const countDownDate = new Date(weddingDate).getTime();
+    setInterval(function() {
+      const now = new Date().getTime();
+      const distance = countDownDate - now;
+      if (document.getElementById("days")) {
+        document.getElementById("days").innerText = Math.floor(distance / (1000 * 60 * 60 * 24));
+        document.getElementById("hours").innerText = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        document.getElementById("mins").innerText = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        document.getElementById("secs").innerText = Math.floor((distance % (1000 * 60)) / 1000);
+      }
+    }, 1000);
+  }
+</script>
+</body>
+</html>
